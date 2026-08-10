@@ -1,19 +1,24 @@
 import { Request, Response } from 'express';
 import { RentalService } from '../services/rental.service';
+import { IdParam, MessageResponse, PaginatedResponse } from '../types/common.types';
+import {
+    CreateRentalRequestBody,
+    RentalListQuery,
+    RentalResponseBody,
+    UpdateRentalRequestBody,
+} from '../types/rental.types';
 
 export class RentalController {
-    static async list(req: Request, res: Response): Promise<void> {
+    static async list(
+        req: Request<unknown, unknown, unknown, RentalListQuery>,
+        res: Response<PaginatedResponse<RentalResponseBody>>,
+    ): Promise<void> {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 10;
         const vehicle_id = req.query.vehicle_id ? Number(req.query.vehicle_id) : undefined;
-        const status = req.query.status as
-            | 'booked'
-            | 'ongoing'
-            | 'completed'
-            | 'cancelled'
-            | undefined;
-        const from_date = req.query.from_date as string | undefined;
-        const to_date = req.query.to_date as string | undefined;
+        const status = req.query.status;
+        const from_date = req.query.from_date;
+        const to_date = req.query.to_date;
 
         const result = await RentalService.list({
             page,
@@ -35,7 +40,10 @@ export class RentalController {
         });
     }
 
-    static async getById(req: Request, res: Response): Promise<void> {
+    static async getById(
+        req: Request<IdParam>,
+        res: Response<RentalResponseBody | MessageResponse>,
+    ): Promise<void> {
         try {
             const id = Number(req.params.id);
             const rental = await RentalService.getById(id);
@@ -49,7 +57,10 @@ export class RentalController {
         }
     }
 
-    static async create(req: Request, res: Response): Promise<void> {
+    static async create(
+        req: Request<unknown, unknown, CreateRentalRequestBody>,
+        res: Response<RentalResponseBody | MessageResponse>,
+    ): Promise<void> {
         try {
             const rental = await RentalService.create(req.body);
             res.status(201).json(rental);
@@ -68,7 +79,10 @@ export class RentalController {
         }
     }
 
-    static async update(req: Request, res: Response): Promise<void> {
+    static async update(
+        req: Request<IdParam, unknown, UpdateRentalRequestBody>,
+        res: Response<RentalResponseBody | MessageResponse>,
+    ): Promise<void> {
         try {
             const id = Number(req.params.id);
             const rental = await RentalService.update(id, req.body);
@@ -92,7 +106,10 @@ export class RentalController {
         }
     }
 
-    static async remove(req: Request, res: Response): Promise<void> {
+    static async remove(
+        req: Request<IdParam>,
+        res: Response<MessageResponse>,
+    ): Promise<void> {
         try {
             const id = Number(req.params.id);
             await RentalService.remove(id);

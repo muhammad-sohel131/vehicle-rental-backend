@@ -22,7 +22,7 @@ A REST API for a vehicle rental company. Staff log in and manage the vehicle fle
 1. **Clone the repository**
 
 ```bash
-   git clone <repo-url>
+   git clone https://github.com/muhammad-sohel131/vehicle-rental-backend.git
    cd vehicle-rental-backend
 ```
 
