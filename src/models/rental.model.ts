@@ -1,3 +1,4 @@
+import { Knex } from 'knex';
 import db from '../config/database';
 
 export type RentalStatus = 'booked' | 'ongoing' | 'completed' | 'cancelled';
@@ -27,13 +28,20 @@ export interface RentalListFilters {
 export class RentalModel {
     private static tableName = 'rentals';
 
+    static async lockVehicle(trx: Knex.Transaction, vehicleId: number): Promise<void> {
+        await trx.raw('SELECT pg_advisory_xact_lock(?)', [vehicleId]);
+    }
+
     static async hasOverlap(
         vehicleId: number,
         startDate: string,
         endDate: string,
         excludeRentalId?: number,
+        trx?: Knex.Transaction,
     ): Promise<boolean> {
-        const result = await db.raw(
+        const queryRunner = trx || db;
+
+        const result = await queryRunner.raw(
             `
       SELECT 1
       FROM rentals
@@ -91,8 +99,9 @@ export class RentalModel {
         return db<Rental>(this.tableName).where({ id }).first();
     }
 
-    static async create(payload: Partial<Rental>): Promise<Rental> {
-        const [rental] = await db<Rental>(this.tableName).insert(payload).returning('*');
+    static async create(payload: Partial<Rental>, trx?: Knex.Transaction): Promise<Rental> {
+        const queryRunner = trx || db;
+        const [rental] = await queryRunner<Rental>(this.tableName).insert(payload).returning('*');
         return rental;
     }
 
