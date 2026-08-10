@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 import { VehicleService } from '../services/vehicle.service';
 import { IdParam, MessageResponse, PaginatedResponse } from '../types/common.types';
 import {
@@ -7,6 +9,23 @@ import {
     VehicleListQuery,
     VehicleResponseBody,
 } from '../types/vehicle.types';
+
+const uploadPath = process.env.UPLOAD_PATH || 'uploads';
+
+if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+function saveFileToDisk(file: Express.Multer.File): string {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const ext = path.extname(file.originalname);
+    const filename = `vehicle-${uniqueSuffix}${ext}`;
+    const filePath = path.join(uploadPath, filename);
+
+    fs.writeFileSync(filePath, file.buffer);
+
+    return filePath.split(path.sep).join('/');
+}
 
 export class VehicleController {
     static async list(
@@ -54,7 +73,7 @@ export class VehicleController {
     ): Promise<void> {
         try {
             const { name, plate_number, category, daily_rate } = req.body;
-            const photo_path = req.file ? req.file.path : undefined;
+            const photo_path = req.file ? saveFileToDisk(req.file) : undefined;
 
             const vehicle = await VehicleService.create({
                 name,
@@ -81,7 +100,7 @@ export class VehicleController {
         try {
             const id = Number(req.params.id);
             const { name, plate_number, category, daily_rate } = req.body;
-            const photo_path = req.file ? req.file.path : undefined;
+            const photo_path = req.file ? saveFileToDisk(req.file) : undefined;
 
             const vehicle = await VehicleService.update(id, {
                 name,
